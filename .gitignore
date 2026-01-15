@@ -1,0 +1,17 @@
+.venv/
+__pycache__/
+*.duckdb
+
+# Data lake artifacts (keep placeholder gitkeep files only)
+data/**
+!data/raw/
+!data/raw/.gitkeep
+!data/processed/
+!data/processed/.gitkeep
+!data/marts/
+!data/marts/.gitkeep
+
+# Dashboard screenshots (keep placeholder)
+dashboards/screenshots/**
+!dashboards/screenshots/.gitkeep
+!dashboards/screenshots/SHOTLIST.md
