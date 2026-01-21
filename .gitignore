@@ -11,6 +11,11 @@ data/**
 !data/marts/
 !data/marts/.gitkeep
 
+# ML artifacts (ignored except placeholder)
+!data/ml/
+data/ml/**
+!data/ml/.gitkeep
+
 # Dashboard screenshots (keep placeholder)
 dashboards/screenshots/**
 !dashboards/screenshots/.gitkeep

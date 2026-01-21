@@ -1,69 +1,56 @@
-# Payments Analytics & Executive Dashboard
+# Payments Analytics & Merchant Churn ML Platform
 
-A production-style payments intelligence stack that consolidates acquisition, conversion, and retention insights for Sales, Marketing, Finance, Risk, and Operations. The repo shows how one team can own synthetic data generation, data quality, DuckDB modeling, KPI marts, and Tableau/Looker dashboards from a single codebase.
-
-## Tech Stack
-- **Python 3.11** for ETL orchestration and synthetic data generation.
-- **DuckDB + SQL** for schema management, KPI views, and window-function analytics.
-- **PyArrow / Parquet** for efficient columnar storage and hive-style partitions.
-- **Tableau / Looker Studio / Looker** for dashboard delivery (with Python notebook fallback).
-- **Rich documentation** (Markdown specs, run summaries, shot lists) for executive storytelling.
+Production-ready analytics engineering plus applied ML for payments. This repo combines synthetic data generation, DuckDB marts, curated Looker/Tableau dashboards, and a merchant churn / revenue-decline modeling workflow so a single data team can prove end-to-end ownership.
 
 ## Architecture Overview
 ```
-Raw sources → Python ETL → DuckDB (analytics.duckdb) → KPI marts (CSV/Parquet) → Tableau / Looker dashboards
+Raw Data → Python ETL → DuckDB (analytics.duckdb) → KPI Marts → Looker/Tableau Dashboards → Merchant Churn ML Models
 ```
-- **Data layer:** `/data/raw`, `/data/processed`, and `/data/marts` isolate landing, staging, and consumption tiers (only `.gitkeep` files tracked).
-- **Compute:** `etl/` modules configure paths via `pathlib`, generate synthetic merchants/customers/transactions, run DuckDB DDL/DML, and export marts.
-- **BI layer:** `sql/kpis.sql`, `dashboards/dashboard_spec.md`, and `dashboards/README_dashboard.md` describe exactly how dashboards consume the marts.
-- **Narrative:** `docs/executive_summary.md` and `dashboards/screenshots/SHOTLIST.md` keep the story stakeholder-ready.
+- **Raw + ETL:** `etl/run_pipeline.py` synthesizes merchants/customers/transactions, enforces schema defined in `sql/schema.sql`, and persists to DuckDB + Parquet.
+- **KPI marts:** `sql/kpis.sql` materializes executive metrics that downstream dashboards expect.
+- **Dashboards:** Specs and build guides under `dashboards/` document Tableau/Looker tiles, filters, drilldowns, and screenshot governance.
+- **ML system:** `ml/` modules create merchant-week features straight from DuckDB, label churn and revenue-decline events, train/evaluate sklearn baselines plus TPOT search, and ship outreach lists.
 
-## Business Questions Answered
-- How are GPV, approval rates, and fee yield trending week-over-week and month-over-month?
-- Which merchant segments, industries, or regions are driving outperformance or risk?
-- Where are declines concentrated (reason × channel), and what remediation actions matter most?
-- What is the retention health of newly onboarded merchants/cohorts, and which account managers need to intervene?
-- How concentrated is revenue in top merchants, and where do we see early signs of churn?
+## Tech Stack
+- Python 3.11, `rich` CLI logging, and type-hinted modules
+- DuckDB + SQL + PyArrow/Parquet for analytics storage
+- Looker Studio / Tableau for BI delivery
+- scikit-learn, Gradient Boosting, Random Forest, KNN
+- TPOT for automated pipeline search, matplotlib for lift curves
 
-## Local Setup & Execution
-1. Install Python 3.11 and clone this repository.
-2. Create and activate a virtual environment, then install dependencies:
+## Project 1 — Payments Analytics Dashboard
+1. Create a virtual environment and install requirements:
    ```bash
    python -m venv .venv
-   # Windows
-   .venv\Scripts\activate
-   # macOS / Linux
-   source .venv/bin/activate
-   pip install --upgrade pip
+   .venv\Scripts\activate   # Windows
    pip install -r requirements.txt
    ```
-3. Run the end-to-end pipeline (customize `--rows`, `--start-date`, `--end-date` as needed):
+2. Refresh synthetic data, DuckDB, and KPI marts:
    ```bash
-   python etl/run_pipeline.py --rows 2000000
+   python etl/run_pipeline.py
    ```
-4. Output artifacts:
-   - Synthetic Parquet under `data/raw/` (Hive partitions).
-   - DuckDB database at `data/analytics.duckdb`.
-   - KPI marts at `data/marts/*.csv`.
-   - Run summary appended to `docs/run_summary.md`.
-5. Review the dashboard spec/build guide and connect Tableau/Looker to the refreshed marts.
+3. Connect Tableau/Looker to `data/marts/` (CSV) or directly to `data/analytics.duckdb`, following [dashboards/dashboard_spec.md](dashboards/dashboard_spec.md) and [dashboards/README_dashboard.md](dashboards/README_dashboard.md).
 
-## Dashboard Layer & Screenshots
-- **Specification:** [dashboards/dashboard_spec.md](dashboards/dashboard_spec.md) covers stakeholders, KPI tiles, visuals, calculations, drilldowns, and acceptance criteria.
-- **Build Guide:** [dashboards/README_dashboard.md](dashboards/README_dashboard.md) documents Tableau CSV/ODBC steps and Looker/Looker Studio modeling patterns.
-- **Shotlist:** [dashboards/screenshots/SHOTLIST.md](dashboards/screenshots/SHOTLIST.md) lists the required captures — use placeholders such as [01_exec_overview.png](dashboards/screenshots/01_exec_overview.png), [02_exec_overview_filters.png](dashboards/screenshots/02_exec_overview_filters.png), ..., [07_monthly_growth_trends.png](dashboards/screenshots/07_monthly_growth_trends.png) once screenshots are exported.
-- **Portfolio Narrative:** Mirrors a Chase Payment Solutions engagement where Analytics partners with Sales/Marketing/Finance to deliver trustworthy KPIs, decline insights, and retention playbooks.
+## Project 2 — Merchant Churn ML System
+1. Ensure DuckDB is current (run the ETL step above if needed).
+2. Launch the ML workflow (default label = churn_4w, TPOT enabled):
+   ```bash
+   python ml/pipeline.py --label churn_4w --tpot
+   ```
+   Useful flags: `--label rev_decline_40pct`, `--train-end-date YYYY-MM-DD`, `--no-score-latest`, or omit `--tpot` for faster runs.
+3. Outputs (gitignored under `data/ml/`): merchant-week features, labels, trained `.joblib` files + `model_card.json`, evaluation metrics/lift tables, feature importances, and `scores_latest_week.csv` outreach lists. Stakeholder summary lives in [docs/churn_model_readout.md](docs/churn_model_readout.md) with the lift plot at [docs/churn_lift_curve.png](docs/churn_lift_curve.png).
 
-## What This Demonstrates
-- End-to-end ownership: synthetic data, QA, modeling, KPI views, dashboards, and executive storytelling inside one repo.
-- Modern analytics engineering practices: parameterized ETL, DuckDB SQL-as-code, partitioned Parquet, reproducible marts.
-- BI enablement: detailed Tableau/Looker build scripts, screenshot governance, and stakeholder-ready messaging.
-- Engineering hygiene: `pathlib` everywhere, type hints, docstrings, and automated summary artifacts for audits.
+## Dashboards & ML Outputs
+- **Executive dashboards:** KPI tiles (GPV, approvals, fee yield), decline drilldowns, cohort retention, and playbooks defined in `dashboards/`. Screenshot placeholders are governed by [dashboards/screenshots/SHOTLIST.md](dashboards/screenshots/SHOTLIST.md).
+- **ML artifacts:** Weekly churn-risk rankings with driver-aware recommendations (`scores_latest_week.csv`), evaluation JSON + lift CSV for enablement, and feature importance exports to guide AM playbooks.
 
-See [PROJECT_NOTES.md](PROJECT_NOTES.md) for guidance on synthetic data expectations, regeneration commands, and why KPI views precompute metrics for BI tooling.
+## Synthetic Data Only
+Every dataset in this repository is programmatically generated for demo purposes. **All data is synthetic. No real payment or customer data.**
 
-## Roadmap
-- Add CAC/LTV and profitability KPIs plus anomaly detection notebooks.
-- Parameterize Looker Studio community visualizations for faster UAT.
-- Schedule ETL via GitHub Actions / Airflow and publish nightly extracts.
-- Automate executive summary narration and screenshot capture.
+## What This Demonstrates (Recruiter Cliff Notes)
+- One team can own ETL, DuckDB modeling, KPI marts, dashboards, and ML scoring in a single repo.
+- Strong engineering hygiene: parameterized pipelines, pathlib paths, docstrings, tests, gitignored data, and reproducible environments.
+- Applied ML that respects business context (time-based splits, TPOT automation, lift/feature importance deliverables) and turns into outreach-ready action.
+- Portfolio-ready documentation for executives (specs, run summaries, dashboards, churn model readout) plus automation hooks for future CI/CD.
+
+See [PROJECT_NOTES.md](PROJECT_NOTES.md) for additional guidance on synthetic data controls and regeneration commands.
