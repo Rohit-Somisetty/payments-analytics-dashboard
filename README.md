@@ -31,6 +31,8 @@ Raw Data → Python ETL → DuckDB (analytics.duckdb) → KPI Marts → Looker/T
    ```
 3. Connect Tableau/Looker to `data/marts/` (CSV) or directly to `data/analytics.duckdb`, following [dashboards/dashboard_spec.md](dashboards/dashboard_spec.md) and [dashboards/README_dashboard.md](dashboards/README_dashboard.md).
 
+<img width="1197" height="723" alt="Executive Overview" src="https://github.com/user-attachments/assets/688f5352-09c4-4cbf-8f57-ee1e1bb3a936" />
+
 ## Project 2 — Merchant Churn ML System
 1. Ensure DuckDB is current (run the ETL step above if needed).
 2. Launch the ML workflow (default label = churn_4w, TPOT enabled):
